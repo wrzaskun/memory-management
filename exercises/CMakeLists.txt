@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB SOURCES *.cpp)
 
 foreach(FILE ${SOURCES})
-    add_compile_options(-Wall -Wextra -Werror -pedantic -pedantic-errors -g)
+    add_compile_options(-Wall -Wextra -pedantic -pedantic-errors -g)
     get_filename_component(BINNAME ${FILE} NAME_WE)
     add_executable(${BINNAME} ${FILE})
 endforeach(FILE)
