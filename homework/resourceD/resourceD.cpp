@@ -33,6 +33,7 @@ int main(int argc, char* argv[])
     }
     catch (logic_error & e)
     {
+        delete rsc;
         cout << e.what() << endl;
     }
     return 0;
