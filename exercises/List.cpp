@@ -1,6 +1,13 @@
 #include <iostream>
 #include <memory>
+#include <exception>
+
 using namespace std;
+class EmptyListError : public runtime_error
+{
+public:
+    EmptyListError(const std::string &msg) : std::runtime_error("EmptyListError : " + msg) {}
+};
 
 class Node
 {
@@ -37,8 +44,7 @@ public:
     {
         if (!first)
         {
-            cout << "List is empty!" << endl;
-            return nullptr;
+            throw EmptyListError{"List is empty!"};
         }
         else
         {
@@ -56,8 +62,7 @@ public:
                     current = (current->next);
                 }
             } while (current);
-            cout << "Not found: value " << value << endl;
-            return nullptr;
+            throw EmptyListError{"Not found: " + std::to_string(value)};
         }
     }
 
@@ -75,10 +80,19 @@ int main()
     lista.add(make_unique<Node>(2));
     lista.add(std::move(node7));
     lista.add(make_unique<Node>(9));
-    auto node = lista.get(1);
 
-    if (node)
-        cout << node->value << '\n';
+    try
+    {
+        auto node = lista.get(1);
+        if (node)
+        {
+            cout << node->value << '\n';
+        }
+    }
+    catch (const EmptyListError &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
 
     return 0;
 }
