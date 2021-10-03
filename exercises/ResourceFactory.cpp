@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <memory>
 
 using namespace std;
 
@@ -9,7 +10,7 @@ struct Resource
     Resource(char *byte) : byte_(byte) {}
     char *byte() const { return byte_; }
     virtual string name() const = 0;
-    virtual ~Resource() { delete byte_; } //to powinno być virtualne bo nie zwolni pamięci w destruktorze.
+    virtual ~Resource() { delete byte_; }
 
 protected:
     char *byte_ = nullptr;
@@ -39,32 +40,28 @@ struct ResourceB : virtual public Resource
 
 struct ResourceFactory
 {
-    Resource *makeResourceA(char *byte) { return new ResourceA{byte}; } //to tylko tworzy wskaźnik na wpisane dane. Niebezpiecznie dawać to na stercie zwłaszcza że to tylko char.
-    Resource *makeResourceB(char *byte) { return new ResourceB{byte}; } 
+    shared_ptr<Resource> makeResourceA(char *byte) { return make_shared<ResourceA>(byte); } //fix by share_ptr
+    shared_ptr<Resource> makeResourceB(char *byte) { return make_shared<ResourceB>(byte); }
 };
 
 struct ResourceCollection
 {
-    void add(Resource *r) { resources.push_back(r); }
-    void clear() //to kasuje tylko wskaźniki do tych zasobów a nie same zasoby. - trzeba zrobić pętle kasującą.
+    void add(std::shared_ptr<Resource> r) { resources.push_back(r); }
+    void clear()
     {
-        for (const auto &res : resources)
-        {
-            delete res;
-        }
         resources.clear();
-    }                                                            
-    Resource *operator[](int index) { return resources[index]; } //nie ma sprawdzenie czy taki index będzie w dostępnych zasobach.
+    }
+    shared_ptr<Resource> operator[](int index) { return resources.at(index); } //change to at, to throw, need protect either
     void printAll()
     {
-        for (const auto &res : resources) 
+        for (const auto &res : resources)
         {
             cout << res->name() << endl;
         }
     }
 
 private:
-    vector<Resource *> resources; //unikałbym wskaźnika skoro to vektor bo może go ktoś usunąć, lepiej kopiować tak małe dane albo dać shared_ptr.
+    vector<shared_ptr<Resource>> resources;
 };
 
 int main()
@@ -76,9 +73,9 @@ int main()
     collection.printAll();
 
     //tak nie powinno się dać zrobić, zwracam wskaźnik i mogę teraz podmienić wartość np: firstByte = new char (3);
-    auto firstByte = collection[0]->byte();
-    firstByte = new char {0x67}; //podmieniam wartość
-    cout << *firstByte << endl;
+    unique_ptr<char> firstByte = make_unique<char>(*collection[0]->byte()); //hamuje wyciek
+    firstByte = make_unique<char>(0x67);                                    //podmieniam wartość
+    cout << *collection[0]->byte() << endl;
 
     collection.clear();
 
